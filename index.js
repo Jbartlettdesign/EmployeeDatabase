@@ -32,7 +32,7 @@ inquirer
             message:'What would you like to do?',
             choices:['view all departments', 'view all roles', 
                      'view all employees', 'add a department', 'add a role', 
-                      'add an employee', 'update an employee role', 'quit']
+                      'add an employee', 'remove an employee', 'update an employee role', 'quit']
         }
     ]).then(choice => {
         if(choice.question === 'view all departments'){
@@ -211,24 +211,70 @@ inquirer
 
         });
     }
+    else if(choice.question === 'remove an employee'){
+              
+        inquirer 
+        .prompt([
+            {   
+                type:'input',
+                name:'employee_id',
+                message:'Enter the employee id to remove',
+            }
+        ]).then(answers => {
+        const sql = `DELETE FROM employee 
+        WHERE id = ?`;
+
+        const params = [answers.employee_id];
+
+        db.query(sql, params, (err, rows) => {
+            if(err){
+                console.log("failed to delete an employee");
+                return;
+            }
+            else(
+                console.log('Successfully deleted an employee'),
+                continueOrQuit()
+                );
+                
+        });
+        
+
+        });
+    }
         
         /**************************************************/
         else if(choice.question === 'update an employee role'){
-             const sql = `SELECT * FROM employee`;
-            db.query(sql, (err, rows) => {
+            inquirer 
+        .prompt([
+            {   
+                type:'input',
+                name:'employee_id',
+                message:'Enter the employee id to update',
+            }
+            ,
+            {   
+                type:'input',
+                name:'role_id',
+                message:'Enter the role id to update',
+            }
+        ]).then(answers => {
+             const sql = `UPDATE employee
+             SET role_id = ?
+             WHERE id = ?`;
+             const params = [answers.role_id, answers.employee_id];
+            db.query(sql, params, (err, rows) => {
                 if(err){
-                    console.log("failed to retrieve");
+                    console.log("failed to update role");
                     return;
                 }
                 else(
-                    console.table(rows),
+                    console.log("updated employee role"),
                     continueOrQuit()
                     );
-                    
-                    //console.log('Push arrow down to go to questions');
             });
             
-        }
+        });
+    }
         else if(choice.question === 'quit'){
             console.log('Goodbye');
             quit = true;
