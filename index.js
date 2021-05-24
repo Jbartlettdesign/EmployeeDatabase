@@ -3,7 +3,26 @@ const db = require('./db/connection');
 const cTable = require('console.table');
 var quit = false;
 
-function startPromt(){
+function continueOrQuit(){
+    inquirer
+    .prompt([
+        {
+            type:'list',
+            name:'question',
+            message:'Continue?',
+            choices:['Yes', 'No']
+        }
+    ]).then(answers => {
+        if(answers.question === 'No'){
+            process.exit();
+        }
+        else(
+            startPrompt()
+            );
+    });
+}
+
+function startPrompt(){
 
 inquirer 
     .prompt([
@@ -20,37 +39,56 @@ inquirer
             const sql = `SELECT * FROM department`;
             db.query(sql, (err, rows) => {
                 if(err){
-                    console.log("failed to retrieve");
+                    console.log("failed to retrieve departments");
                     return;
                 }
                 else(
-                    console.table(rows));
-                
+                    console.table(rows),
+                    continueOrQuit()
+                    );
+                    //console.log('Push arrow down to go to questions');
             });
-            //startPromt();
+            
+            
         }    
         else if(choice.question === 'view all roles'){
             const sql = `SELECT * FROM role`;
             db.query(sql, (err, rows) => {
                 if(err){
-                    console.log("failed to retrieve");
+                    console.log("failed to retrieve roles");
                     return;
                 }
                 else(
-                    console.table(rows));
+                    console.table(rows),
+                    continueOrQuit()
+                    );
+                    //console.log('Push arrow down to go to questions');
+
             });
+            
         }
         else if(choice.question === 'view all employees'){
             const sql = `SELECT * FROM employee`;
             db.query(sql, (err, rows) => {
                 if(err){
-                    console.log("failed to retrieve");
+                    console.log("failed to retrieve employees");
                     return;
                 }
                 else(
-                    console.table(rows));
+                    console.table(rows),
+                    continueOrQuit()
+                    );
+                    //console.log('Push arrow down to go to questions');
             });
+            
         }
+
+
+
+
+
+
+
         /**************************************************/
         else if(choice.question === 'add a department'){
             inquirer
@@ -64,16 +102,21 @@ inquirer
             const sql = `INSERT INTO department
             (name)
             VALUES (?)`;
-            const params = answers.name;
+            const params = [answers.name]
             db.query(sql, params, (err, rows) => {
                 if(err){
-                    console.log("failed to retrieve");
+                    console.log("failed to add department");
                     return;
                 }
                 else(
-                    console.table(rows));
+                    console.log('Successfully added department'),
+                    continueOrQuit()
+                    );
+                    //console.log('Push arrow down to go to questions');
+                    
                 });
             });
+            
         }
         /**************************************************/
         else if(choice.question === 'add a role'){
@@ -96,18 +139,27 @@ inquirer
                 }
             ]).then(answers =>{
             const sql = `INSERT INTO role
+            (title, salary, department_id)
             VALUES (?,?,?)`;
 
             const params = [answers.title, answers.salary, answers.department_id]
             db.query(sql, params, (err, rows) => {
                 if(err){
-                    console.log("failed to retrieve");
+                    console.log("failed to add role");
                     return;
                 }
                 else(
-                    console.table(rows));
+                    //console.table(rows)
+                    console.log('Successfully added a role'),
+                    continueOrQuit()
+                    );
+                    
+                    //console.log('Push arrow down to go to questions');
+                    
+
             });
         });
+        
     }
     
         /**************************************************/
@@ -145,12 +197,15 @@ inquirer
 
         db.query(sql, params, (err, rows) => {
             if(err){
-                console.log("failed to retrieve add employee");
+                console.log("failed to retrieve add an employee");
                 return;
             }
             else(
                 //console.table(rows));
-                console.log('Successfully added employee'));
+                console.log('Successfully added an employee'),
+                continueOrQuit()
+                );
+                
         });
         
 
@@ -166,7 +221,11 @@ inquirer
                     return;
                 }
                 else(
-                    console.table(rows));
+                    console.table(rows),
+                    continueOrQuit()
+                    );
+                    
+                    //console.log('Push arrow down to go to questions');
             });
             
         }
@@ -187,5 +246,5 @@ inquirer
         console.log('Database connected.');
 
     });
-    startPromt();
+    startPrompt();
     
