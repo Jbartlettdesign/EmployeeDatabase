@@ -158,7 +158,12 @@ inquirer
         else if(choice.question === 'view all roles'){
             FindInfo();
 
-            const sql = `SELECT * FROM role`;
+            const sql = `SELECT role.*,
+            department.name AS deparment
+            FROM role
+            LEFT JOIN department
+            ON role.department_id = department.id
+            `;
             db.query(sql, (err, rows) => {
                 if(err){
                     console.log("Failed to retrieve roles, going back to start.");
@@ -322,7 +327,7 @@ inquirer
                 Usabledepartment.forEach(element => {
                     if(element === answers.department_id){
                         answers.department_id = Usabledepartment.indexOf(element) + 1;
-                        console.log(answers.department_id);
+                        //console.log(answers.department_id);
                     }
                 });
             const sql = `INSERT INTO role
@@ -408,13 +413,13 @@ inquirer
             usableTerms.forEach(element => {
                 if(element === answers.role_id){
                     answers.role_id = usableTerms.indexOf(element) + 1;
-                    console.log(answers.role_id);
+                    //console.log(answers.role_id);
                 }
             });
             Usabledepartment.forEach(element => {
                 if(element === answers.department_name){
                     answers.department_name = Usabledepartment.indexOf(element) + 1;
-                    console.log(answers.role_id);
+                    //console.log(answers.role_id);
                 }
             });
             
@@ -455,7 +460,7 @@ inquirer
         ]).then(answers => {
             var res = [];
             res = answers.employee_id.split(" ");
-            console.log(res);
+            //console.log(res);
         const sql = `DELETE FROM employee 
         WHERE first_name = ? AND last_name = ?`;
 
@@ -503,7 +508,7 @@ inquirer
             usableTerms.forEach(element => {
                 if(element === answers.role_id){
                     answers.role_id = usableTerms.indexOf(element) + 1;
-                    console.log(answers.role_id);
+                    //console.log(answers.role_id);
                 }
             });
              
@@ -572,10 +577,26 @@ inquirer
     /*****************************************************/
         else if(choice.question === 'view employees by manager'){
             FindInfo();
+            usableManager.push("null");
+            inquirer 
+            .prompt([
+                {   
+                    type:'list',
+                    name:'manager_id',
+                    message:'Enter the manager name to to view.',
+                    choices:usableManager
+                }
+                
+            ]).then(answers => {
         
-         const sql = `SELECT first_name, last_name, manager_id FROM employee`;
+        //console.log(answers.usableManager);
+         const sql = `SELECT first_name, last_name 
+         FROM employee
+         WHERE manager_id = ?
+         `;
          
-        db.query(sql, (err, rows) => {
+        const params = [answers.manager_id]
+        db.query(sql, params, (err, rows) => {
             if(err){
                 console.log("Failed to view employees by manager, going back to start.");
                 startPrompt();
@@ -585,17 +606,29 @@ inquirer
                 continueOrQuit()
                 );
     });
+});
 }
 else if(choice.question === 'view employees by department'){
     FindInfo();
-    
-     const sql = `SELECT employee.first_name, employee.last_name, employee.department_id,
+    inquirer 
+            .prompt([
+                {   
+                    type:'list',
+                    name:'department_id',
+                    message:'Enter the department to to view.',
+                    choices:usableDepoToUse
+                }
+                
+            ]).then(answers => {
+     const sql = `SELECT employee.first_name, employee.last_name,
             department.name AS department 
             FROM employee
             LEFT JOIN department
-            ON employee.department_id = department.id`;;
-     
-    db.query(sql, (err, rows) => {
+            ON employee.department_id = department.id
+            WHERE department.name = ?
+            `;
+            const params = [answers.department_id]
+    db.query(sql,params, (err, rows) => {
         if(err){
             console.log("Failed to view employees by manager, going back to start.");
             startPrompt();
@@ -604,6 +637,7 @@ else if(choice.question === 'view employees by department'){
             console.table(rows),
             continueOrQuit()
             );
+});
 });
 }
 else if(choice.question === 'update an employee department'){
@@ -634,9 +668,9 @@ else if(choice.question === 'update an employee department'){
     Usabledepartment.forEach(element => {
         if(element === answers.department_id){
             answers.department_id = Usabledepartment.indexOf(element) + 1;
-            console.log(answers.department_id);
+            //console.log(answers.department_id);
         }
-        else(console.log("fail"));
+        //else(console.log("fail"));
     });
      
      const params = [answers.department_id, res[0], res[1]];

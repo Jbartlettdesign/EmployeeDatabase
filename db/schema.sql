@@ -11,7 +11,9 @@ CREATE TABLE role(
     id INTEGER AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(30) NOT NULL,
     salary DECIMAL(6,0) NOT NULL,
-    department_id INTEGER
+    department_id INTEGER,
+    CONSTRAINT fk_depo FOREIGN KEY (department_id) REFERENCES department(id)
+
 );
 
 CREATE TABLE employee(
