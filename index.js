@@ -1,6 +1,7 @@
 const inquirer = require('inquirer');
 const db = require('./db/connection');
 const cTable = require('console.table');
+const { using } = require('rxjs');
 var namesToUse = [];
 var rolesToUse = [];
 
@@ -130,8 +131,8 @@ inquirer
             name:'question',
             message:'What would you like to do?',
             choices:['view all departments', 'view all roles', 
-                     'view all employees', 'add a department', 'add a role', 
-                      'add an employee', 'remove an employee', 'update an employee role', 'quit']
+                     'view all employees', 'view employees by manager', 'view employees by department', 'add a department', 'add a role', 
+                      'add an employee', 'remove an employee', 'update an employee role', 'update an employee manager', 'update an employee department', 'calculate total salary', 'quit']
             
                     }
     ]).then(choice => {
@@ -520,16 +521,169 @@ inquirer
             
         });
     }
-        else if(choice.question === 'quit'){
-            console.log('Goodbye');
-            quit = true;
-            process.exit();
-            
+    /*****************************************************/
+    else if(choice.question === 'update an employee manager'){
+        FindInfo();
+        usableManager.push("null");
+        inquirer 
+    .prompt([
+        {   
+            type:'list',
+            name:'employee_id',
+            message:'Enter the employee name to update.',
+            choices:usableNames
         }
+        ,
+        {   
+            type:'list',
+            name:'manager_name',
+            message:'Enter the manager name to update.',
+            choices: usableManager
+
+        }
+    ]).then(answers => {
+        var res = [];
+        res = answers.employee_id.split(" ");
+         const sql = `UPDATE employee
+         SET manager_id = ?
+         WHERE first_name = ? AND last_name = ?`;
+         
+        /*usableManager.forEach(element => {
+            if(element === answers.manager_name){
+                answers.manager_name = usableManager.indexOf(element) + 1;
+                console.log(answers.manager_name);
+            }
+        });*/
+         
+         const params = [answers.manager_name, res[0], res[1]];
+        db.query(sql, params, (err, rows) => {
+            if(err){
+                console.log("Failed to update employee manager, going back to start.");
+                startPrompt();
+            }
+            else(
+                console.log("Updated employee manager."),
+                continueOrQuit()
+                );
+        });
         
-        else("console.log(failure");
+    });
+}
+    /*****************************************************/
+        else if(choice.question === 'view employees by manager'){
+            FindInfo();
+        
+         const sql = `SELECT first_name, last_name, manager_id FROM employee`;
+         
+        db.query(sql, (err, rows) => {
+            if(err){
+                console.log("Failed to view employees by manager, going back to start.");
+                startPrompt();
+            }
+            else(
+                console.table(rows),
+                continueOrQuit()
+                );
+    });
+}
+else if(choice.question === 'view employees by department'){
+    FindInfo();
+    
+     const sql = `SELECT employee.first_name, employee.last_name, employee.department_id,
+            department.name AS department 
+            FROM employee
+            LEFT JOIN department
+            ON employee.department_id = department.id`;;
+     
+    db.query(sql, (err, rows) => {
+        if(err){
+            console.log("Failed to view employees by manager, going back to start.");
+            startPrompt();
+        }
+        else(
+            console.table(rows),
+            continueOrQuit()
+            );
+});
+}
+else if(choice.question === 'update an employee department'){
+    FindInfo();
+    inquirer 
+.prompt([
+    {   
+        type:'list',
+        name:'employee_id',
+        message:'Enter the employee name to update.',
+        choices:usableNames
+    }
+    ,
+    {   
+        type:'list',
+        name:'department_id',
+        message:'Enter the department name to update.',
+        choices: Usabledepartment
+
+    }
+]).then(answers => {
+    var res = [];
+    res = answers.employee_id.split(" ");
+     const sql = `UPDATE employee
+     SET department_id = ?
+     WHERE first_name = ? AND last_name = ?`;
+     
+    Usabledepartment.forEach(element => {
+        if(element === answers.department_id){
+            answers.department_id = Usabledepartment.indexOf(element) + 1;
+            console.log(answers.department_id);
+        }
+        else(console.log("fail"));
+    });
+     
+     const params = [answers.department_id, res[0], res[1]];
+    db.query(sql, params, (err, rows) => {
+        if(err){
+            console.log("Failed to update employee manager, going back to start.");
+            startPrompt();
+        }
+        else(
+            console.log("Updated employee department."),
+            continueOrQuit()
+            );
     });
     
+});
+}
+else if(choice.question === 'calculate total salary'){
+    FindInfo();
+    inquirer 
+    
+const sql =
+    `SELECT SUM(role.salary) AS total_salary
+    FROM employee
+    LEFT JOIN role
+    ON employee.role_id = role.id `;
+     
+    db.query(sql, (err, rows) => {
+        if(err){
+            console.log("Failed to retieve salary total, going back to start.");
+            startPrompt();
+        }
+        else(
+            console.table(rows),
+            continueOrQuit()
+            );    
+});
+}
+    else if(choice.question === 'quit'){
+        console.log('Goodbye');
+        quit = true;
+        process.exit();
+        
+    }
+    
+    else("console.log(failure");
+});
+
 }
     
     db.connect(err => {
