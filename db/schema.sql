@@ -20,7 +20,7 @@ CREATE TABLE employee(
     last_name VARCHAR(30) NOT NULL,
     role_id INTEGER(30),
     manager_id VARCHAR(30),
-    department_name INTEGER(30),
+    department_id INTEGER(30),
     CONSTRAINT fk_role FOREIGN KEY (role_id) REFERENCES role(id),
-    CONSTRAINT fk_name FOREIGN KEY (department_name) REFERENCES department(id)
+    CONSTRAINT fk_name FOREIGN KEY (department_id) REFERENCES department(id)
 );
