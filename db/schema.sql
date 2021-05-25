@@ -18,6 +18,9 @@ CREATE TABLE employee(
     id INTEGER AUTO_INCREMENT PRIMARY KEY,
     first_name VARCHAR(30) NOT NULL,
     last_name VARCHAR(30) NOT NULL,
-    role_id INTEGER,
-    manager_id INTEGER
+    role_id INTEGER(30),
+    manager_id VARCHAR(30),
+    department_name INTEGER(30),
+    CONSTRAINT fk_role FOREIGN KEY (role_id) REFERENCES role(id),
+    CONSTRAINT fk_name FOREIGN KEY (department_name) REFERENCES department(id)
 );

@@ -1,9 +1,21 @@
 const inquirer = require('inquirer');
 const db = require('./db/connection');
 const cTable = require('console.table');
-var quit = false;
+var namesToUse = [];
+var rolesToUse = [];
+
+var managerTerms = [];
+var usableManager = [];
+
+var usableTerms = [];
+var usableNames = [];
+
+var departmentToUse = [];
+var Usabledepartment = [];
+var test = ["x"];
 
 function continueOrQuit(){
+    FindInfo();
     inquirer
     .prompt([
         {
@@ -22,8 +34,75 @@ function continueOrQuit(){
     });
 }
 
-function startPrompt(){
+function FindInfo(){
+    const msql = `SELECT first_name, last_name 
+    FROM employee
+    WHERE role_id = 1
+    `;
+    db.query(msql, (err, rows) => {
+        if(err){
+            console.log("failed to retrieve employees");
+            return;
+        }
+        else(
+                managerTerms = rows,
+                usableManager = managerTerms.map(({first_name, last_name}) => {
+                    return `${first_name} ${last_name}`;
+                    
+                    
+                }) 
+            );                
+    });
 
+    const nsql = `SELECT first_name, last_name FROM employee`;
+    db.query(nsql, (err, rows) => {
+        if(err){
+            console.log("failed to retrieve employees");
+            return;
+        }
+        else(
+                namesToUse = rows,
+                usableNames = namesToUse.map(({first_name, last_name}) => {
+                    return `${first_name} ${last_name}`;
+                    
+                    
+                }) 
+            );                
+    });
+    
+    const tsql = `SELECT title FROM role`;
+    db.query(tsql, (err, rows) => {
+        if(err){
+            console.log("failed to retrieve employees");
+            return;
+        }
+        else(
+                rolesToUse = rows,
+                usableTerms = rolesToUse.map(({title}) => {
+                    return `${title}`;
+                    
+                    
+                }) 
+            ); 
+    });
+
+    const dsql = `SELECT name FROM department`;
+    db.query(dsql, (err, rows) => {
+        if(err){
+            console.log("failed to retrieve departments");
+            return;
+        }
+        else(
+                departmentToUse = rows,
+                Usabledepartment = departmentToUse.map(({name}) => {
+                    return `${name}`;
+                
+                }) 
+            );
+    });
+}
+
+function startPrompt(){
 inquirer 
     .prompt([
         {
@@ -35,7 +114,10 @@ inquirer
                       'add an employee', 'remove an employee', 'update an employee role', 'quit']
         }
     ]).then(choice => {
+        
         if(choice.question === 'view all departments'){
+            FindInfo();
+
             const sql = `SELECT * FROM department`;
             db.query(sql, (err, rows) => {
                 if(err){
@@ -52,6 +134,8 @@ inquirer
             
         }    
         else if(choice.question === 'view all roles'){
+            FindInfo();
+
             const sql = `SELECT * FROM role`;
             db.query(sql, (err, rows) => {
                 if(err){
@@ -68,7 +152,12 @@ inquirer
             
         }
         else if(choice.question === 'view all employees'){
-            const sql = `SELECT * FROM employee`;
+            FindInfo();
+            //
+            const sql = `SELECT employee.*, role.salary AS salary, role.title AS title
+            FROM employee
+            LEFT JOIN role
+            ON employee.role_id = role.id `;
             db.query(sql, (err, rows) => {
                 if(err){
                     console.log("failed to retrieve employees");
@@ -91,6 +180,8 @@ inquirer
 
         /**************************************************/
         else if(choice.question === 'add a department'){
+            FindInfo();
+
             inquirer
             .prompt([
                 {
@@ -120,6 +211,8 @@ inquirer
         }
         /**************************************************/
         else if(choice.question === 'add a role'){
+            FindInfo();
+
             inquirer
             .prompt([
                 {
@@ -133,11 +226,18 @@ inquirer
                 message:'Add a salary.'
                 },
                 {
-                type:'input',
+                type:'list',
                 name:'department_id',
-                message:'Add a department id.'
+                message: 'Add a department this role belongs to.',
+                choices: Usabledepartment
                 }
             ]).then(answers =>{
+                Usabledepartment.forEach(element => {
+                    if(element === answers.department_id){
+                        answers.department_id = Usabledepartment.indexOf(element) + 1;
+                        console.log(answers.department_id);
+                    }
+                });
             const sql = `INSERT INTO role
             (title, salary, department_id)
             VALUES (?,?,?)`;
@@ -164,8 +264,14 @@ inquirer
     
         /**************************************************/
         else if(choice.question === 'add an employee'){
-              
+            
+            
+            FindInfo();
+            usableManager.push("null");
+            console.log(usableTerms);
+        //console.log(usableTerms);
         inquirer 
+        
         .prompt([
             {   
                 type:'input',
@@ -178,26 +284,46 @@ inquirer
                 message:'Enter your last name',
             },
             {
-                type:'input',
+                type:'list',
                 name:'role_id',
-                message:'Enter your role id name',
+                message:'Enter your department role',
+                choices: usableTerms,
             },
             {
-                type:'input',
+                type:'list',
                 name:'manager_id',
-                message:'Enter your manager id name',
+                message:'Enter your managers name',
+                choices: usableManager,
             }
         ]).then(answers => {
+            usableTerms.forEach(element => {
+                if(element === answers.role_id){
+                    answers.role_id = usableTerms.indexOf(element) + 1;
+                    console.log(answers.role_id);
+                }
+            });
+            /*if(answers.role_id === "Manager"){
+                answers.role_id = 1;
+            }
+            if(answers.role_id === "Engineer"){
+               answers.role_id = 2;
+           }if(answers.role_id === "Researcher"){
+               answers.role_id = 3;
+           }if(answers.role_id === "Designer"){
+               answers.role_id = 4;
+           }if(answers.role_id === "Quality Checker"){
+               answers.role_id = 5;
+           }*/
         const sql = `INSERT INTO employee 
         (first_name, last_name, role_id, manager_id)
         VALUES (?,?,?,?)`;
 
         const params = [answers.first_name, answers.last_name, 
-        answers.role_id, answers.manager_id];
+        answers.role_id, answers. manager_id];
 
         db.query(sql, params, (err, rows) => {
             if(err){
-                console.log("failed to retrieve add an employee");
+                console.log("failed to add an employee");
                 return;
             }
             else(
@@ -212,19 +338,24 @@ inquirer
         });
     }
     else if(choice.question === 'remove an employee'){
-              
+        FindInfo();
+
         inquirer 
         .prompt([
             {   
-                type:'input',
+                type:'list',
                 name:'employee_id',
-                message:'Enter the employee id to remove',
+                message:'Enter the employee name to remove',
+                choices: usableNames
             }
         ]).then(answers => {
+            var res = [];
+            res = answers.employee_id.split(" ");
+            console.log(res);
         const sql = `DELETE FROM employee 
-        WHERE id = ?`;
+        WHERE first_name = ? AND last_name = ?`;
 
-        const params = [answers.employee_id];
+        const params = [res[0], res[1]];
 
         db.query(sql, params, (err, rows) => {
             if(err){
@@ -244,24 +375,50 @@ inquirer
         
         /**************************************************/
         else if(choice.question === 'update an employee role'){
+            FindInfo();
+
             inquirer 
         .prompt([
             {   
-                type:'input',
+                type:'list',
                 name:'employee_id',
-                message:'Enter the employee id to update',
+                message:'Enter the employee name to update',
+                choices:usableNames
             }
             ,
             {   
-                type:'input',
+                type:'list',
                 name:'role_id',
-                message:'Enter the role id to update',
+                message:'Enter the role to update',
+                choices:usableTerms
+
             }
         ]).then(answers => {
+            var res = [];
+            res = answers.employee_id.split(" ");
              const sql = `UPDATE employee
              SET role_id = ?
-             WHERE id = ?`;
-             const params = [answers.role_id, answers.employee_id];
+             WHERE first_name = ? AND last_name = ?`;
+             /*if(answers.role_id === "Manager"){
+                 answers.role_id = 1;
+             }
+             if(answers.role_id === "Engineer"){
+                answers.role_id = 2;
+            }if(answers.role_id === "Researcher"){
+                answers.role_id = 3;
+            }if(answers.role_id === "Designer"){
+                answers.role_id = 4;
+            }if(answers.role_id === "Quality Checker"){
+                answers.role_id = 5;
+            }*/
+            usableTerms.forEach(element => {
+                if(element === answers.role_id){
+                    answers.role_id = usableTerms.indexOf(element) + 1;
+                    console.log(answers.role_id);
+                }
+            });
+             
+             const params = [answers.role_id, res[0], res[1]];
             db.query(sql, params, (err, rows) => {
                 if(err){
                     console.log("failed to update role");
@@ -292,5 +449,6 @@ inquirer
         console.log('Database connected.');
 
     });
+    FindInfo();
     startPrompt();
     
